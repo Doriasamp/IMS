@@ -1,0 +1,34 @@
+﻿@inject NavigationManager NavigationManager
+@inject IDeleteProductByIdUseCase DeleteProductByIdUseCase
+
+@code {
+
+    [Parameter]
+    public Product? Item { get; set; }
+
+
+    private async Task HandleDeleteProduct(int productId)
+    {
+        await DeleteProductByIdUseCase.ExecuteAsync(productId);
+        this.Item = null;
+    }
+
+}
+
+<!-- HTML -->
+
+@if (Item is not null)
+{
+    <tr>
+        <td>@Item.ProductName</td>
+        <td>@Item.Quantity</td>
+        <td>@Item.Price.ToString("c")</td>
+        <td>
+            <a href="/edit-inventory/@Item.ProductId"  type="button" class="btn btn-primary">Edit</a>
+        </td>
+        <td style="text-align: left">
+            <button type="button" class="btn btn-danger" @onclick="async () => { await HandleDeleteProduct(Item.ProductId); }">Delete</button>
+        </td>
+    </tr>
+}
+

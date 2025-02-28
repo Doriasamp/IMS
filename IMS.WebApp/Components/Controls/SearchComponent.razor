@@ -18,11 +18,16 @@
         OnSearch.InvokeAsync(searchFilter);
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        searchFilter ??= searchFilter = string.Empty;
+        await Task.CompletedTask;
+    }
+
 
 }
 
 
-@(searchFilter ??= searchFilter = string.Empty)
 
 <EditForm Enhance="true" Model="searchFilter" FormName="formSearch" OnSubmit="Search">
     <DataAnnotationsValidator></DataAnnotationsValidator>
@@ -33,6 +38,5 @@
     </div>
     <br />
 </EditForm>
-<br />
 
 

@@ -1,0 +1,53 @@
+﻿@*
+    AddProduct.razor
+    This component is responsible for adding a new product to the system.
+    It uses the AddProductUseCase to add a new product to the system.
+    It uses the NavigationManager to navigate to the products page after adding a new product.
+    It uses the EditForm component to create a form for adding a new product.
+    RenderMode is set to InteractiveServer to enable server-side validation.
+*@
+@page "/add-to-product"
+@rendermode InteractiveServer
+@inject IAddProductUseCase AddProductUseCase
+@inject NavigationManager NavigationManager
+
+@code {
+
+    private Product item { get; set; } = new Product();
+
+    private async Task SaveAsync()
+    {
+        await AddProductUseCase.ExecuteAsync(item);
+        NavigationManager.NavigateTo("/products");
+    }
+}
+
+
+<h3>Add a product</h3>
+<EditForm Model="item"  OnValidSubmit="SaveAsync" FormName="AddProduct">
+    <DataAnnotationsValidator ></DataAnnotationsValidator>
+    <ValidationSummary></ValidationSummary>
+    <div class="form-group">
+        <label for="name">Product Name</label>
+        <InputText class="form-control" id="productNameForm" placeholder="Enter product name" @bind-Value="item.ProductName"/>
+        <ValidationMessage For="@(() => item.ProductName)" />
+    </div>
+    <div class="form-group">
+        <label for="Quantity">Quantity</label>
+        <InputNumber TValue="int" class="form-control" id="productQuantityForm" placeholder="Enter a quantity" @bind-Value="item.Quantity"/>
+        <ValidationMessage For="@(() => item.Quantity)"></ValidationMessage>
+    </div>
+    <div class="form-group">
+        <label for="Price">Price</label>
+        <InputNumber TValue="double" class="form-control" id="productPriceForm" placeholder="Enter a price" @bind-Value="item.Price"/>
+        <ValidationMessage For="@(() => item.Price)"></ValidationMessage>
+    </div>
+    <div class="form-group">
+        <label for="Price">Inventories</label>
+        <ProductInventoriesComponent Product="this.item"></ProductInventoriesComponent>
+    </div>
+    <br/>
+    <button type="submit" class="btn btn-primary">Save</button>
+    &nbsp;
+    <a class="btn btn-secondary" href="/products">Cancel</a>
+</EditForm>
