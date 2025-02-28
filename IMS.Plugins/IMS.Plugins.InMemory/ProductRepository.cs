@@ -58,7 +58,7 @@ public class ProductRepository : IProductRepository
     {
         if (_products.Any(i => i.ProductName.Equals(product.ProductName, StringComparison.OrdinalIgnoreCase)))
         {
-            return Task.CompletedTask;
+            return Task.CompletedTask;  // Product already exists
         }
 
         var maxId = _products.Max(i => i.ProductId);   // Create a new Product id

@@ -1,0 +1,70 @@
+﻿@*
+    Stateful component that allows searching for inventories by name.
+    It uses the ViewInventoriesByName use case to search for inventories by name.
+    It uses the IViewInventoriesByName interface to inject the ViewInventoriesByName use case.
+    Event handler SearchInventoryAsync is called when the user clicks the search button.
+    
+    Data binding on input used for rendering results by input without a button event handler.
+*@
+
+@inject IViewInventoriesByName ViewInventoriesByName
+
+
+@code {
+
+    [Parameter]
+    public EventCallback<Inventory> OnInventorySelected { get; set; }
+
+    private string _searchFilter = null!;
+
+    private string searchFilter
+    {
+        get => _searchFilter;
+        set
+        {
+            _searchFilter = value;
+            SearchInventoryAsync();
+        }
+    }
+    private List<Inventory> _inventories = new List<Inventory>();
+
+
+    private async Task SearchInventoryAsync()
+    {
+        await Task.Delay(2000); // Simulate a long-running delay in the search like a database call.
+        _inventories = (await ViewInventoriesByName.ExecuteAsync(searchFilter)).ToList();
+        StateHasChanged(); // It notifies the component that the state has changed and it should re-render.
+    }
+
+    private async Task HandleSelectInventory(Inventory inventory)
+    {
+        await OnInventorySelected.InvokeAsync(inventory);
+        _inventories.Clear();
+    }
+}
+
+
+<div class="input-group">
+    <input id="name" 
+           class="form-control" 
+           placeholder="Type to search inventory items" 
+           @bind-value="this.searchFilter"
+           @bind-value:event="oninput"
+
+           @onclick="SearchInventoryAsync" />
+    <button type="button" class="btn-success input-group-text">Search</button>
+</div>
+@if (_inventories.Count != 0)
+{   <div class="search-result">
+        <ul>
+            @foreach (var inv in _inventories)
+            {
+                <!-- the key tag avoid rendering of the whole list, it keeps indexing based on ID and re-render only what changed (only with server-interactivity) -->
+                <li @key="inv.InventoryId" @onclick=" async () => {await HandleSelectInventory(inv);}">
+                    @inv.InventoryName
+                </li> 
+            }
+        </ul>
+    </div>
+
+}

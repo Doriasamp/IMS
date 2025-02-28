@@ -22,11 +22,13 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
     serverOptions.ListenAnyIP(51001, listenOptions => listenOptions.UseHttps()); // HTTPS
 });
 
-// Add services to the container.
-builder.Services.AddRazorComponents();
+#region Add services to the container
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 // Register InventoryRepository as a singleton service (one instance for the entire app lifetime)
 builder.Services.AddSingleton<IInventoryRepository, InventoryRepository>();
+builder.Services.AddSingleton<IProductRepository, ProductRepository>();
+
 
 #region Register transient services (one instance per request)
 // Inventory Use Cases
@@ -37,7 +39,10 @@ builder.Services.AddTransient<IEditInventoryUseCase, EditInventoryUseCase>();
 builder.Services.AddTransient<IDeleteInventoryUseCase, DeleteInventoryUseCase>();
 // Product Use Cases
 builder.Services.AddTransient<IViewProductsByNameUseCase, ViewProductsByNameUseCase>();
+builder.Services.AddTransient<IDeleteProductByIdUseCase, DeleteProductsByIdUseCase>();
+builder.Services.AddTransient<IAddProductUseCase, AddProductUseCase>();
 #endregion
+#endregion Add services to the container
 
 var app = builder.Build();
 
@@ -49,10 +54,13 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+
+#region Middleware
 // Ensure Static Files (CSS, Bootstrap, JS) Load Correctly in both Debug and Published mode
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
-app.MapRazorComponents<App>();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+#endregion
 
 app.Run();
