@@ -40,11 +40,45 @@ public class ProductRepository : IProductRepository
     /// <summary>
     /// Get Product by Id parameter
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="productId"></param>
     /// <returns></returns>
-    public async Task<Product?> GetProductByIdAsync(int id)
+    public async Task<Product?> GetProductByIdAsync(int productId)
     {
-        return await Task.FromResult(_products.FirstOrDefault(i => i.ProductId == id));
+        var prod = _products.FirstOrDefault(x => x.ProductId == productId);
+        var newProd = new Product();
+        if (prod != null)
+        {
+            newProd.ProductId = prod.ProductId;
+            newProd.ProductName = prod.ProductName;
+            newProd.Price = prod.Price;
+            newProd.Quantity = prod.Quantity;
+            newProd.ProductInventories = new List<ProductInventory>();
+            if (prod.ProductInventories != null && prod.ProductInventories.Count > 0)
+            {
+                foreach (var prodInv in prod.ProductInventories)
+                {
+                    var newProdInv = new ProductInventory
+                    {
+                        InventoryId = prodInv.InventoryId,
+                        ProductId = prodInv.ProductId,
+                        Product = prod,
+                        Inventory = new Inventory(),
+                        InventoryQuantity = prodInv.InventoryQuantity
+                    };
+                    if (prodInv.Inventory != null)
+                    {
+                        newProdInv.Inventory.InventoryId = prodInv.Inventory.InventoryId;
+                        newProdInv.Inventory.InventoryName = prodInv.Inventory.InventoryName;
+                        newProdInv.Inventory.Price = prodInv.Inventory.Price;
+                        newProdInv.Inventory.Quantity = prodInv.Inventory.Quantity;
+                    }
+
+                    newProd.ProductInventories.Add(newProdInv);
+                }
+            }
+        }
+
+        return await Task.FromResult(newProd);
     }
 
 
@@ -53,7 +87,6 @@ public class ProductRepository : IProductRepository
     /// </summary>
     /// <param name="Product"></param>
     /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
     public Task AddProductAsync(Product product)
     {
         if (_products.Any(i => i.ProductName.Equals(product.ProductName, StringComparison.OrdinalIgnoreCase)))
@@ -71,24 +104,22 @@ public class ProductRepository : IProductRepository
 
     public Task UpdateProductAsync(Product product)
     {
-        var itemToUpdate = _products.FirstOrDefault(i => i.ProductId.Equals(product.ProductId));
-
-        if (_products.Any(i => (i.ProductName.Equals(product.ProductName, StringComparison.OrdinalIgnoreCase)) && 
-                                  !i.ProductId.Equals(product.ProductId)) )
-            
-        {
+        if (_products.Any(x => x.ProductId != product.ProductId &&
+                               x.ProductName.ToLower() == product.ProductName.ToLower()))
             return Task.CompletedTask;
-        }
 
-        if (itemToUpdate is not null)
+        var prod = _products.FirstOrDefault(x => x.ProductId == product.ProductId);
+        if (prod is not null)
         {
-            itemToUpdate.ProductName = product.ProductName;
-            itemToUpdate.Quantity = product.Quantity;
-            itemToUpdate.Price = product.Price;
+            prod.ProductName = product.ProductName;
+            prod.Quantity = product.Quantity;
+            prod.Price = product.Price;
+            prod.ProductInventories = product.ProductInventories;
         }
 
         return Task.CompletedTask;
     }
+
 
     public Task DeleteProductByIdAsync(int id)
     {

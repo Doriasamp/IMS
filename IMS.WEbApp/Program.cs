@@ -1,5 +1,7 @@
 using IMS.UseCases.PluginInterfaces;
 using IMS.Plugins.InMemory;
+using IMS.UseCases.Activities;
+using IMS.UseCases.Activities.Interfaces;
 using IMS.UseCases.Inventories;
 using IMS.UseCases.Products;
 using IMS.UseCases.Inventories.Interfaces;
@@ -28,6 +30,7 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 // Register InventoryRepository as a singleton service (one instance for the entire app lifetime)
 builder.Services.AddSingleton<IInventoryRepository, InventoryRepository>();
 builder.Services.AddSingleton<IProductRepository, ProductRepository>();
+builder.Services.AddSingleton<IInventoryTransactionRepository, InventoryTransactionRepository>();
 
 
 #region Register transient services (one instance per request)
@@ -41,6 +44,10 @@ builder.Services.AddTransient<IDeleteInventoryUseCase, DeleteInventoryUseCase>()
 builder.Services.AddTransient<IViewProductsByNameUseCase, ViewProductsByNameUseCase>();
 builder.Services.AddTransient<IDeleteProductByIdUseCase, DeleteProductsByIdUseCase>();
 builder.Services.AddTransient<IAddProductUseCase, AddProductUseCase>();
+builder.Services.AddTransient<IEditProductUseCase, EditProductUseCase>();
+builder.Services.AddTransient<IViewProductByIdUseCase, ViewProductByIdUseCase>();
+// Activity Use Cases
+builder.Services.AddTransient<IPurchaseInventoryUseCase, PurchaseInventoryUseCase>();
 #endregion
 #endregion Add services to the container
 

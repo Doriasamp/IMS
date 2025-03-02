@@ -1,0 +1,106 @@
+﻿@page "/purchase"
+@rendermode InteractiveServer
+@using static  IMS.WebApp.Components.Controls.Common.AutoCompleteComponent
+@inject IViewInventoriesByName ViewInventoriesByName
+@inject IViewInventoryByIdUseCase ViewInventoryById
+@inject IPurchaseInventoryUseCase PurchaseInventoryUseCase
+@inject NavigationManager NavigationManager
+
+@code {
+
+    private PurchaseViewModel purchaseViewModel = new PurchaseViewModel();  // ViewModel for the purchase form
+    private Inventory? selectedInventory = null;
+
+
+    /// <summary>
+    /// Function passed to Function delegate in the AutoCompleteComponent
+    /// </summary>
+    /// <param name="userInput"></param>
+    /// <returns>A list of ItemViewModel with id and name properties.</returns>
+    private List<ItemViewModel>? SearchInventory(string input)
+    {
+        var list = ViewInventoriesByName.ExecuteAsync(input).GetAwaiter().GetResult();
+
+        if (list is null) return null;
+
+        // Use projection to convert Inventory model to the ItemViewModel defined in code block
+        // within the AutoCompleteComponent blazor component
+        return list.Select(i => new ItemViewModel
+            {
+                Id = i.InventoryId,
+                Name = i.InventoryName
+            })?.ToList();
+    }
+
+
+    private async Task HandleItemSelected(ItemViewModel item)
+    {
+        // Handle the selected item
+        this.purchaseViewModel.InventoryId = item.Id;
+        selectedInventory = await ViewInventoryById.ExecuteAsync(item.Id);
+        if (selectedInventory is null)
+        {
+            throw new InvalidOperationException("Inventory not found");
+        }
+        this.purchaseViewModel.InventoryPrice = selectedInventory.Price;
+    }
+
+
+    private async Task Purchase()
+    {
+        if (selectedInventory is null)
+        {
+            throw new InvalidOperationException("Inventory not found");
+        }
+        // Purchase the inventory
+        await PurchaseInventoryUseCase.ExecuteAsync(
+            this.purchaseViewModel.PoNumber,
+            this.selectedInventory,
+            this.purchaseViewModel.QuantityToPurchase, 
+            "Andrea"
+        );
+        this.purchaseViewModel = new PurchaseViewModel();
+        this.selectedInventory = null;
+    }
+}
+
+<!-- -------------- HTML --------------- -->
+
+<h3>Purchase Inventory</h3>
+<br/>
+<EditForm Model="purchaseViewModel" FormName="purchaseForm" OnValidSubmit="Purchase">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-group">
+        <label for="po">Purchase Order #</label>
+        <InputText id="po" class="form-control" @bind-Value="purchaseViewModel.PoNumber" />
+    </div>
+    <br/>
+    <div class="card">
+        <div class="card-body">
+            <div class="form-group">
+                <AutoCompleteComponent
+                    Label="Inventory to Purchase"
+                    SearchFunction="SearchInventory"
+                    OnItemSelected="HandleItemSelected"/>
+                @if (purchaseViewModel.InventoryPrice > 0)
+                {
+                    <text>Price:</text>
+                    @purchaseViewModel.InventoryPrice.ToString("c")
+                }
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="form-group">
+        <label for="quantity">Quantity</label>
+        <InputNumber TValue="int" id="quantity" class="form-control" @bind-Value="purchaseViewModel.QuantityToPurchase" />
+    </div>
+    <br />
+    <button type="submit" class="btn btn-primary">Purchase</button>
+
+</EditForm>
+
+
+
+
