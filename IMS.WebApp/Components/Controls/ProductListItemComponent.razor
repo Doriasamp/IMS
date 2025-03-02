@@ -24,7 +24,7 @@
         <td>@Item.Quantity</td>
         <td>@Item.Price.ToString("c")</td>
         <td>
-            <a href="/edit-inventory/@Item.ProductId"  type="button" class="btn btn-primary">Edit</a>
+            <a href="/edit-product/@Item.ProductId"  type="button" class="btn btn-primary">Edit</a>
         </td>
         <td style="text-align: left">
             <button type="button" class="btn btn-danger" @onclick="async () => { await HandleDeleteProduct(Item.ProductId); }">Delete</button>

@@ -23,7 +23,7 @@
         set
         {
             _searchFilter = value;
-            SearchInventoryAsync();
+            _ = SearchInventoryAsync(); // It calls the search method when the search filter changes, and it doesn't wait for the method to complete.
         }
     }
     private List<Inventory> _inventories = new List<Inventory>();
@@ -31,7 +31,7 @@
 
     private async Task SearchInventoryAsync()
     {
-        await Task.Delay(2000); // Simulate a long-running delay in the search like a database call.
+        await Task.Delay(500); // Simulate a long-running delay in the search like a database call.
         _inventories = (await ViewInventoriesByName.ExecuteAsync(searchFilter)).ToList();
         StateHasChanged(); // It notifies the component that the state has changed and it should re-render.
     }

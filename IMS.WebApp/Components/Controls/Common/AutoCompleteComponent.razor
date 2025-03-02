@@ -1,0 +1,142 @@
+﻿@using Microsoft.Extensions.FileSystemGlobbing.Internal.PathSegments
+
+
+@code {
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public Func<string, List<ItemViewModel>>? SearchFunction { get; set; }  // Function delegate to search items that uses ItemViewModel for generic purpose
+
+    [Parameter]
+    public List<ItemViewModel>? SearchResults { get; set; } = null;
+
+    [Parameter]
+    public EventCallback<ItemViewModel> OnItemSelected { get; set; }  // Event callback to handle the selection of an item and pass it to the parent component
+
+    private ItemViewModel? selectedItem = null;
+
+    private string _userInput = string.Empty;
+    private ItemViewModel? currentItem = null;   // to keep track of the current item in the search result
+    private int currentItemIndex = -1;  // to keep track of the current item index in the search result
+
+    public string userInput
+    {
+        get => _userInput;
+        set
+        {
+            _userInput = value;
+            if (!string.IsNullOrEmpty(_userInput) && SearchFunction != null)
+            {
+                SearchResults = SearchFunction(_userInput);
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// Helper function to handle the selection of an item from the search result
+    /// </summary>
+    /// <param name="item"></param>
+    private void HandleSelectItem(ItemViewModel item)
+    {
+        ClearHighlighting();
+        if (item is not null)
+        {
+            this.selectedItem = item;
+            this.userInput = item.Name ?? string.Empty; // to display the selected item in the input field
+            this.SearchResults = null;  // to make the search result disappear after selecting an item
+            OnItemSelected.InvokeAsync(item);  // to pass the selected item to the parent component
+        }
+    }
+
+    /// <summary>
+    /// Helper function to clear the highlighting of the search result
+    /// </summary>
+    private void ClearHighlighting()
+    {
+        SearchResults = null;
+        currentItem = null;
+        currentItemIndex = -1;
+    }
+
+
+    /// <summary>
+    /// Handle key up events
+    /// </summary>
+    /// <param name="e"></param>
+    private void OnKeyUp(KeyboardEventArgs e)
+    {
+        if (SearchResults is not null && SearchResults.Count > 0 && (e.Code == "ArrowDown" || e.Code == "ArrowUp"))
+        {
+            // Handle arrow-down key navigation
+            if (e.Code == "ArrowDown" && currentItemIndex < SearchResults.Count -1)
+            {
+                currentItem = SearchResults[++currentItemIndex];
+            }
+            // Handle arrow-up key navigation
+            else if (e.Code == "ArrowUp")
+            {
+                if (currentItemIndex > 0)
+                {
+                    currentItem = SearchResults[--currentItemIndex];
+                }
+                else
+                {
+                    currentItem = null;
+                    currentItemIndex = -1;
+                }
+            }
+
+        }
+        // Handle Enter key
+        else if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            if (currentItem is not null) HandleSelectItem(currentItem);
+        }
+    }
+
+
+    // Generic list of items that only uses id and name, so that 
+    // it can be used for any type of items (Inventory, Product, User, etc.)
+    public class ItemViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+}
+
+
+
+
+<!-- HTML -->
+<div class="form-group">
+    <label for="search">@Label</label>
+    <input 
+        type="text"
+        class="form-control"
+        @bind-value="userInput"
+        @bind-value:event="oninput"
+        @onkeyup="OnKeyUp" />
+</div>
+@if (SearchResults is not null && SearchResults.Count > 0)
+{
+    <div class="search-result">
+        <ul>
+            @{
+                int itemIndex = 0;
+                @foreach (var item in SearchResults)
+                {
+                    <li
+                        class="@(itemIndex == currentItemIndex?"selected":"")"
+                        @key="item.Id"
+                        @onclick="() => HandleSelectItem(item)">
+                        @item.Name
+                    </li>
+                    itemIndex++;
+                }
+            }
+        </ul>
+    </div>
+}
