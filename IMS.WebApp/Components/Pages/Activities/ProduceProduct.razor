@@ -1,0 +1,104 @@
+﻿@page "/produce"
+@using static  IMS.WebApp.Components.Controls.Common.AutoCompleteComponent
+@inject IViewProductsByNameUseCase ViewProductsByNameUseCase
+@inject IViewProductByIdUseCase ViewProductByIdUseCase
+@inject IProduceProductUseCase ProduceProductUseCase
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<h3>Produce Product</h3>
+<br/>
+
+
+<EditForm Model="produceViewModel" FormName="produceForm" OnValidSubmit="Produce" id="produce-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-group">
+        <label for="po">Production #</label>
+        <InputText id="po" class="form-control" @bind-Value="produceViewModel.ProductionNumber" />
+    </div>
+    <br />
+    <div class="card">
+        <div class="card-body">
+            <div class="form-group">
+                <AutoCompleteComponent Label="Product to Produce"
+                SearchFunction="SearchProduct"
+                OnItemSelected="HandleItemSelected" />
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="form-group">
+        <label for="quantity">Quantity</label>
+        <InputNumber TValue="int" id="quantity" class="form-control" @bind-Value="produceViewModel.QuantityToProduce" />
+    </div>
+    <br />
+    <button type="submit" class="btn btn-primary">Produce</button>
+
+</EditForm>
+
+
+
+
+@code {
+
+    private ProduceViewModel produceViewModel = new ProduceViewModel();
+    private Product? selectedProduct;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            JSRuntime.InvokeVoidAsync("preventFormSubmission", "produce-form");
+        }
+
+    }
+
+
+
+    /// <summary>
+    /// Function passed to Function delegate in the AutoCompleteComponent
+    /// </summary>
+    /// <param name="userInput"></param>
+    /// <returns>A list of ItemViewModel with id and name properties.</returns>
+    private async Task<List<ItemViewModel>?> SearchProduct(string input)
+    {
+        var list = await ViewProductsByNameUseCase.ExecuteAsync(input);
+
+        if (list is null) return null;
+
+        // Use projection to convert Product model to the ItemViewModel defined in code block
+        // within the AutoCompleteComponent blazor component
+        return list.Select(i => new ItemViewModel
+        {
+            Id = i.ProductId,
+            Name = i.ProductName
+        })?.ToList();
+    }
+
+
+    private async Task HandleItemSelected(ItemViewModel item)
+    {
+        selectedProduct = await ViewProductByIdUseCase.ExecuteAsync(item.Id);
+
+        this.produceViewModel.ProductId = item.Id;
+        this.produceViewModel.Product = selectedProduct;
+    }
+
+
+    private async Task Produce()
+    {
+
+        await ProduceProductUseCase.ExecuteAsync(
+            this.produceViewModel.ProductionNumber,
+            selectedProduct!,
+            this.produceViewModel.QuantityToProduce,
+            "Andrea"
+            );
+
+        this.produceViewModel = new ProduceViewModel();
+        this.selectedProduct = null;
+    }
+
+}

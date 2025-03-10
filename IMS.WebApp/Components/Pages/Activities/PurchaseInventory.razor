@@ -1,5 +1,7 @@
 ﻿@page "/purchase"
 @rendermode InteractiveServer
+@* Inject the Javascript runtime for InterOp *@
+@inject IJSRuntime JSRuntime
 @using static  IMS.WebApp.Components.Controls.Common.AutoCompleteComponent
 @inject IViewInventoriesByName ViewInventoriesByName
 @inject IViewInventoryByIdUseCase ViewInventoryById
@@ -11,15 +13,29 @@
     private PurchaseViewModel purchaseViewModel = new PurchaseViewModel();  // ViewModel for the purchase form
     private Inventory? selectedInventory = null;
 
+    /// <summary>
+    /// Javasacript interactivity can only be used in the overriden OnAfterRenderAsync method
+    /// </summary>
+    /// <param name="firstRender"></param>
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if(firstRender)
+        {
+            // Register the javascript function to be called from the AutoCompleteComponent
+            JSRuntime.InvokeVoidAsync("preventFormSubmission", "purchase-form");
+        }
+    }
+
 
     /// <summary>
     /// Function passed to Function delegate in the AutoCompleteComponent
     /// </summary>
     /// <param name="userInput"></param>
     /// <returns>A list of ItemViewModel with id and name properties.</returns>
-    private List<ItemViewModel>? SearchInventory(string input)
+    private async Task<List<ItemViewModel>?> SearchInventory(string input)
     {
-        var list = ViewInventoriesByName.ExecuteAsync(input).GetAwaiter().GetResult();
+        var list = await ViewInventoriesByName.ExecuteAsync(input);
 
         if (list is null) return null;
 
@@ -68,7 +84,7 @@
 
 <h3>Purchase Inventory</h3>
 <br/>
-<EditForm Model="purchaseViewModel" FormName="purchaseForm" OnValidSubmit="Purchase">
+<EditForm Model="purchaseViewModel" FormName="purchaseForm" OnValidSubmit="Purchase" id="purchase-form">
     <DataAnnotationsValidator />
     <ValidationSummary />
     <div class="form-group">
