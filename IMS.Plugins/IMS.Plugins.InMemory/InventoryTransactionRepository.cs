@@ -28,4 +28,22 @@ public class InventoryTransactionRepository : IInventoryTransactionRepository
 
         return Task.CompletedTask;
     }
+
+    public Task ProduceAsync(string productionNumber, Inventory inventory, int quantityToConsume, string doneBy, double price)
+    {
+        this._InventoryTransactions.Add(
+            new InventoryTransaction
+            {
+                ProductionNumber = productionNumber,
+                InventoryId = inventory.InventoryId,
+                QuantityBefore = inventory.Quantity,
+                ActivityType = InventoryTransactionType.ProduceProduct,
+                QuantityAfter = inventory.Quantity - quantityToConsume,
+                TransactionDate = DateTime.Now,
+                DoneBy = doneBy,
+                UnitPrice = price
+            }
+        );
+        return Task.CompletedTask;
+    }
 }

@@ -130,6 +130,12 @@ public class ProductRepository : IProductRepository
         }
         return Task.CompletedTask;
     }
+
+
+    public Task ProduceProductAsync(string productionNumber, Product product, int quantity, string doneBy)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 

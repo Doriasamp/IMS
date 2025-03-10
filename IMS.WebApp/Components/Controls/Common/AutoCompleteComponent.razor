@@ -7,7 +7,7 @@
     public string Label { get; set; } = string.Empty;
 
     [Parameter]
-    public Func<string, List<ItemViewModel>>? SearchFunction { get; set; }  // Function delegate to search items that uses ItemViewModel for generic purpose
+    public Func<string, Task<List<ItemViewModel>>>? SearchFunction { get; set; }  // Function delegate to search items that uses ItemViewModel for generic purpose
 
     [Parameter]
     public List<ItemViewModel>? SearchResults { get; set; } = null;
@@ -29,11 +29,20 @@
             _userInput = value;
             if (!string.IsNullOrEmpty(_userInput) && SearchFunction != null)
             {
-                SearchResults = SearchFunction(_userInput);
+                ViewItemAsync();
             }
         }
     }
 
+
+    private async Task ViewItemAsync()
+    {
+        if(SearchFunction is not null)
+        {
+            this.SearchResults = await SearchFunction(_userInput);
+            StateHasChanged();  // Notifies the component that its state has changed and it should be re-rendered
+        }
+    }
 
     /// <summary>
     /// Helper function to handle the selection of an item from the search result
